@@ -1,12 +1,14 @@
 """Keras NALU module"""
 
-from keras import backend as K
-from keras import constraints
-from keras import initializers
-from keras import regularizers
-from keras.engine import InputSpec
-from keras.layers import Layer
-from keras.utils.generic_utils import get_custom_objects
+
+from tensorflow.keras import backend
+from tensorflow.keras import constraints
+from tensorflow.keras import initializers
+from tensorflow.keras import regularizers
+from tensorflow.keras.layers import InputSpec
+from tensorflow.keras.layers import Layer
+from tensorflow.keras.utils import get_custom_objects
+
 
 class NALU(Layer):
     """Keras NALU layer"""
@@ -56,7 +58,7 @@ class NALU(Layer):
                 initializer=self.G_initializer,
                 name='G',
                 regularizer=self.G_regularizer,
-                shape=(input_dim, self.units),
+                shape=(input_dim.value, self.units),
             )
 
         self.M_hat = self.add_weight(
@@ -64,7 +66,7 @@ class NALU(Layer):
             initializer=self.M_hat_initializer,
             name='M_hat',
             regularizer=self.M_hat_regularizer,
-            shape=(input_dim, self.units),
+            shape=(input_dim.value, self.units),
         )
 
         self.W_hat = self.add_weight(
@@ -72,23 +74,23 @@ class NALU(Layer):
             initializer=self.W_hat_initializer,
             name='W_hat',
             regularizer=self.W_hat_regularizer,
-            shape=(input_dim, self.units),
+            shape=(input_dim.value, self.units),
         )
 
         self.built = True
         self.input_spec = InputSpec(axes={-1: input_dim}, min_ndim=2)
 
     def call(self, inputs, **kwargs):
-        W = K.tanh(self.W_hat) * K.sigmoid(self.M_hat)
-        a = K.dot(inputs, W)
-        m = K.exp(K.dot(K.log(K.abs(inputs) + self.e), W))
+        W = backend.tanh(self.W_hat) * backend.sigmoid(self.M_hat)
+        a = backend.dot(inputs, W)
+        m = backend.exp(backend.dot(backend.log(backend.abs(inputs) + self.e), W))
 
         if self.cell == 'a':
             y = a
         elif self.cell == 'm':
             y = m
         else:
-            g = K.sigmoid(K.dot(inputs, self.G))
+            g = backend.sigmoid(backend.dot(inputs, self.G))
             y = (g * a) + ((1 - g) * m)
 
         return y
